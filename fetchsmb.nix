@@ -52,7 +52,7 @@
     ${pkgs.samba}/bin/smbclient ...$args
 
     if ($env.executable == "1") {
-      print "setting executable bit on ${filename}
+      print "setting executable bit on ${filename}"
       chmod +x ${filename}
     }
 
