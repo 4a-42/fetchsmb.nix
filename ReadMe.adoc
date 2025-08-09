@@ -1,0 +1,32 @@
+= ReadMe
+:data-uri:
+:source-highlighter: highlight.js
+:highlightjs-theme: obsidian
+
+I have not had success downloading resources from a windows server with curl, despite documentation saying it should work.
+This fetcher should allow downloading resources from windows servers using nix.
+
+== Example
+
+[source,nix]
+----
+let
+    pkgs = import <nixpkgs> {};
+    fetchsmbclient = import ./fetchsmbclient.nix {
+        inherit pkgs;
+    };
+    fetchzip = pkgs.fetchzip.override {
+        fetchurl = fetchsmbclient;
+    };
+in
+    fetchzip {
+        url = "//a/b";
+        directory = "c/d";
+        workgroup = "e";
+        user = "f";
+        password = "g";
+        filename = "h.zip";
+        hash = pkgs.lib.fakeHash;
+        extension = "zip";
+    }
+----
