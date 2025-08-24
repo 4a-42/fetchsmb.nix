@@ -1,9 +1,6 @@
 {pkgs ? import <nixpkgs> {}}: {
   url,
   directory ? null,
-  workgroup ? null,
-  user ? null,
-  password ? null,
   filename,
   hash,
   recursiveHash ? false,
@@ -11,9 +8,28 @@
   downloadToTemp ? false,
   executable ? false,
   nativeBuildInputs ? [],
+  varPrefix ? null,
   ...
 }: let
   name = filename;
+
+  varBase = "NIX${pkgs.lib.optionalString (varPrefix != null) "_${varPrefix}"}_FETCHSMB_";
+
+  impureEnvVars =
+    pkgs.lib.fetchers.proxyImpureEnvVars
+    # smbclient does not use netrc, afaict
+    ++ [
+      "${varBase}USERNAME"
+      "${varBase}PASSWORD"
+      "${varBase}DOMAIN"
+    ];
+
+  authenticationFilePhase = pkgs.writeText "authenticationFile.txt" ''
+    username = ${builtins.getEnv (varBase + "USERNAME")}
+    password = ${builtins.getEnv (varBase + "PASSWORD")}
+    domain   = ${builtins.getEnv (varBase + "DOMAIN")}
+  '';
+
   postFetchScript = pkgs.writeShellScript "postFetch.sh" ''
     echo "Need to manually source stdenv setup for this to work..."
     . ${pkgs.stdenvNoCC}/setup
@@ -36,12 +52,8 @@
       "--configfile=smb.conf",
       (if "${directory}" != "" {"--directory"} else {""}),
       (if "${directory}" != "" {"${directory}"} else {""}),
-      (if "${workgroup}" != "" {"--workgroup"} else {""}),
-      (if "${workgroup}" != "" {"${workgroup}"} else {""}),
-      (if "${user}" != "" {"--user"} else {""}),
-      (if "${user}" != "" {"${user}"} else {""}),
-      (if "${password}" != "" {"--password"} else {""}),
-      (if "${password}" != "" {"${password}"} else {""}),
+      "--authentication-file",
+      "${authenticationFilePhase}
       "--command",
       "get ${filename} ${filename}"
     ]
@@ -83,7 +95,7 @@
   '';
 in
   pkgs.stdenvNoCC.mkDerivation {
-    inherit name postFetch downloadToTemp executable;
+    inherit name postFetch downloadToTemp executable impureEnvVars;
     inherit (pkgs.stdenvNoCC.buildPlatform) system;
 
     outputHashMode =
