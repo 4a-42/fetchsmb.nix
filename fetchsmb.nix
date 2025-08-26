@@ -24,12 +24,6 @@
       "${varBase}DOMAIN"
     ];
 
-  authenticationFilePhase = pkgs.writeText "authenticationFile.txt" ''
-    username = ${builtins.getEnv (varBase + "USERNAME")}
-    password = ${builtins.getEnv (varBase + "PASSWORD")}
-    domain   = ${builtins.getEnv (varBase + "DOMAIN")}
-  '';
-
   postFetchScript = pkgs.writeShellScript "postFetch.sh" ''
     echo "Need to manually source stdenv setup for this to work..."
     . ${pkgs.stdenvNoCC}/setup
@@ -45,6 +39,11 @@
     let conf = $"[global]\nclient min protocol = CORE\n";
     $conf | save --raw smb.conf
 
+    let authenticationFile = "authenticationFile.txt"
+    $"username = ($env.varBase)USERNAME\n" | save --raw $authenticationFile
+    $"password = ($env.varBase)PASSWORD\n" | save --raw --append $authenticationFile
+    $"domain = ($env.varBase)DOMAIN\n" | save --raw --append $authenticationFile
+
     # I'm putting the args in an array where each arg is a single string,
     # so that args are passed/escaped properly to smbclient.
     let args = [
@@ -53,7 +52,7 @@
       (if "${directory}" != "" {"--directory"} else {""}),
       (if "${directory}" != "" {"${directory}"} else {""}),
       "--authentication-file",
-      "${authenticationFilePhase}
+      $authenticationFile,
       "--command",
       "get ${filename} ${filename}"
     ]
