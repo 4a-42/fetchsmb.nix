@@ -32,7 +32,6 @@ in
         # url = "//server-name/service-name/c/d/h.zip"
         url = "//server-name/service-name";
         directory = "c/d";
-        workgroup = "acme";
         filename = "h.zip";
         hash = pkgs.lib.fakeHash;
         # url points to service-name instead of the file,
