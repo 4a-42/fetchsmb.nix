@@ -3,8 +3,16 @@
 :source-highlighter: highlight.js
 :highlightjs-theme: obsidian
 
-I have not had success downloading resources from a windows server with curl, despite documentation saying it should work.
-This fetcher should allow downloading resources from windows servers using nix.
+The current Nixpkgs fetchers use curl under the hood.
+Curl only supports SMB version 1.
+https://www.man7.org/linux/man-pages/man1/curl.1.html
+
+A typical Windows server will be using SMB2 or SMB3.
+This fetcher should allow downloading resources from such Windows servers.
+It uses samba smbclient under the hood to behave like fetchurl.
+
+One goal for this derivation is for it to be compatible with fetchzip.
+Please open an issue if you want support for other integrations.
 
 == Example
 
@@ -20,13 +28,15 @@ let
     };
 in
     fetchzip {
-        url = "//a/b";
+        # TODO: consider whether to support url's in this format:
+        # url = "//server-name/service-name/c/d/h.zip"
+        url = "//server-name/service-name";
         directory = "c/d";
-        workgroup = "e";
-        user = "f";
-        password = "g";
+        workgroup = "acme";
         filename = "h.zip";
         hash = pkgs.lib.fakeHash;
+        # url points to service-name instead of the file,
+        # so 'fetchzip' will always need the 'extension' field filled out.
         extension = "zip";
     }
 ----

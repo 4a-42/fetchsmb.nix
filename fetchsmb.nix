@@ -1,6 +1,6 @@
 {pkgs ? import <nixpkgs> {}}: {
-  # The server name and share name
-  # NOTE: tools (fetchzip in particular) may expect there to be a `url` field, even though it would be better to have a `server` and `share` field.
+  # The server-name and service-name
+  # NOTE: tools (fetchzip in particular) may expect there to be a `url` field, even though it would be better to have a `server` and `service` field.
   url,
   # The directory within the share to look in
   directory ? null,
