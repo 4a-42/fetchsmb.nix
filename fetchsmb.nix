@@ -1,14 +1,29 @@
 {pkgs ? import <nixpkgs> {}}: {
+  # The server name and share name
+  # NOTE: tools (fetchzip in particular) may expect there to be a `url` field, even though it would be better to have a `server` and `share` field.
   url,
+  # The directory within the share to look in
   directory ? null,
+  # Name of the file.
   filename,
+  # SRI hash.
   hash,
+  # Whether to use a recursive hash (NAR) instead of flat hash.
   recursiveHash ? false,
+  # Shell code executed after the file has been fetched successfully.
+  # NOTE: fetchzip uses this field to unzip the file.
   postFetch ? "",
+  # Whether to download to a temporary path rather than $out. Useful
+  # in conjunction with postFetch. The location of the temporary file
+  # is communicated to postFetch via $downloadedFile.
   downloadToTemp ? false,
+  # If true, set executable bit on the downloaded file.
   executable ? false,
   nativeBuildInputs ? [],
+  # Customize the default impure environment variables.
   varPrefix ? null,
+  # Additional environment variables that should be treated as impure.
+  extraImpureEnvVars ? [],
   ...
 }: let
   name = filename;
@@ -17,6 +32,7 @@
 
   impureEnvVars =
     pkgs.lib.fetchers.proxyImpureEnvVars
+    ++ extraImpureEnvVars
     # smbclient does not use netrc, afaict
     ++ [
       "${varBase}USERNAME"
@@ -99,7 +115,7 @@ in
 
     outputHashMode =
       if (recursiveHash || executable)
-      then "recursive"
+      then "nar"
       else "flat";
 
     nativeBuildInputs =
